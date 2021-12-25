@@ -62,6 +62,22 @@ fn play(
     sounding_until.insert(key, timer.ticks() + 3_000);
 }
 
+fn play_chord(
+    keys: Vec<Key>,
+    delay: u32,
+    pending_sounds: &mut VecDeque<PendingSound>,
+    timer: &TimerSubsystem,
+) {
+    sdl2::mixer::Channel::all().halt();
+    pending_sounds.clear();
+    let mut time = timer.ticks();
+
+    for key in keys {
+        pending_sounds.push_back(PendingSound { key, time });
+        time += delay;
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct PendingSound {
     key: Key,
@@ -113,6 +129,8 @@ fn run() -> Result<(), String> {
         });
         canvas.clear();
         for event in pump.poll_iter() {
+            let current_chord = CHORDS[positive_remainder(current_chord_index, CHORDS.len())];
+            let chord_keys = current_chord.get_keys(current_key);
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -122,49 +140,42 @@ fn run() -> Result<(), String> {
                     break 'running;
                 }
                 Event::KeyDown {
-                    keycode: Some(Keycode::Up),
+                    keycode: Some(Keycode::Right),
                     ..
                 } => current_key = current_key.transpose(1),
                 Event::KeyDown {
-                    keycode: Some(Keycode::Down),
+                    keycode: Some(Keycode::Left),
                     ..
                 } => current_key = current_key.transpose(-1),
                 Event::KeyDown {
-                    keycode: Some(Keycode::Left),
+                    keycode: Some(Keycode::Down),
                     ..
                 } => {
                     current_chord_index -= 1;
                 }
                 Event::KeyDown {
-                    keycode: Some(Keycode::Right),
+                    keycode: Some(Keycode::Up),
                     ..
                 } => {
                     current_chord_index += 1;
                 }
                 Event::KeyDown {
+                    keycode: Some(Keycode::A),
+                    ..
+                } => {
+                    play_chord(chord_keys, 0, &mut pending_sounds, &timer);
+                }
+                Event::KeyDown {
                     keycode: Some(Keycode::S),
                     ..
                 } => {
-                    let current_chord =
-                        CHORDS[positive_remainder(current_chord_index, CHORDS.len())];
-                    sdl2::mixer::Channel::all().halt();
-                    for key in current_chord.get_keys(current_key) {
-                        play(key, &mut sounds, &mut sounding_until, &timer);
-                    }
+                    play_chord(chord_keys, 70, &mut pending_sounds, &timer);
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     ..
                 } => {
-                    let current_chord =
-                        CHORDS[positive_remainder(current_chord_index, CHORDS.len())];
-                    sdl2::mixer::Channel::all().halt();
-                    let mut time = timer.ticks();
-
-                    for key in current_chord.get_keys(current_key) {
-                        pending_sounds.push_back(PendingSound { key, time });
-                        time += 400;
-                    }
+                    play_chord(chord_keys, 400, &mut pending_sounds, &timer);
                 }
                 _ => {}
             }
