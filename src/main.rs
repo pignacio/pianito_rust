@@ -20,14 +20,14 @@ mod note;
 fn get_interval_text(interval: i32) -> String {
     return match interval {
         0 => "R".to_owned(),
-        1 => "2m".to_owned(),
+        1 => "1a\n2m".to_owned(),
         2 => "2".to_owned(),
-        3 => "3m".to_owned(),
+        3 => "2a\n3m".to_owned(),
         4 => "3".to_owned(),
         5 => "4".to_owned(),
-        6 => "4a".to_owned(),
+        6 => "4a\n5m".to_owned(),
         7 => "5".to_owned(),
-        8 => "5a".to_owned(),
+        8 => "5a\n6m".to_owned(),
         9 => "6".to_owned(),
         10 => "7".to_owned(),
         11 => "7M".to_owned(),

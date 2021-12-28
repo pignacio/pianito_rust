@@ -139,20 +139,25 @@ impl<'ttf> Keyboard<'ttf> {
         text: U,
         color: Color,
     ) {
-        let surface = self.font.render(text.as_ref()).blended(color).unwrap();
-        let surface_rect = surface.rect();
-        let texture = self
-            .texture_creator
-            .create_texture_from_surface(surface)
-            .unwrap();
-        let center = key_rect.x() + key_rect.width() as i32 / 2;
-        let dest_rect = Rect::new(
-            center - surface_rect.width() as i32 / 2,
-            key_rect.y() + key_rect.height() as i32 - surface_rect.height() as i32,
-            surface_rect.width(),
-            surface_rect.height(),
-        );
-        canvas.copy(&texture, surface_rect, dest_rect).unwrap();
+        let mut bottom = key_rect.y() + key_rect.height() as i32;
+        let texts: Vec<&str> = text.as_ref().rsplit("\n").collect();
+        for t in texts {
+            let surface = self.font.render(t).blended(color).unwrap();
+            let surface_rect = surface.rect();
+            let texture = self
+                .texture_creator
+                .create_texture_from_surface(surface)
+                .unwrap();
+            let center = key_rect.x() + key_rect.width() as i32 / 2;
+            let dest_rect = Rect::new(
+                center - surface_rect.width() as i32 / 2,
+                bottom - surface_rect.height() as i32,
+                surface_rect.width(),
+                surface_rect.height(),
+            );
+            canvas.copy(&texture, surface_rect, dest_rect).unwrap();
+            bottom -= surface_rect.height() as i32;
+        }
     }
 
     pub fn draw_keyboard<T: RenderTarget>(
