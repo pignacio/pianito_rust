@@ -104,12 +104,10 @@ fn run() -> Result<(), String> {
     let font = Rc::new(ttf.load_font("Inconsolata.otf", 30)?);
 
     let mut canvas = window.into_canvas().build().unwrap();
-    let texture_creator = canvas.texture_creator();
     let keyboard = Keyboard::new(font.clone(), canvas.texture_creator());
     let mut frame_count = 0;
 
     let root_key = Key::new(Note::C, 3);
-    let mut current_key = root_key;
 
     let mut sounding_until: HashMap<Key, u32> = HashMap::new();
 
@@ -199,8 +197,6 @@ fn run() -> Result<(), String> {
             .render(&format!("{}", frame_count))
             .blended(Color::WHITE)
             .unwrap();
-
-        // canvas.copy(&rendered.as_texture(&texture_creator).unwrap(), None, None).unwrap();
 
         let mut states = HashMap::new();
 
