@@ -208,9 +208,6 @@ fn run() -> Result<(), String> {
             KeyState::new(State::HIGHLIGHTED, Some(root_key.text())),
         );
 
-        // for key in get_chord(root_c, Chord::Minor) {
-        //     states.insert(key, KeyState::new(State::PRESSED, None));
-        // }
         let (chord_key, chord) = chord_table.current_chord();
         for key in chord.get_keys(chord_key) {
             states.insert(
@@ -225,16 +222,6 @@ fn run() -> Result<(), String> {
                 ),
             );
         }
-
-        // let chord_text = format!("{}{}", current_key.note().text(), current_chord.get_text());
-        // let rendered = font.render(&chord_text).blended(Color::WHITE).unwrap();
-        // let text_rect = rendered.rect();
-        // let rendered_texture = texture_creator
-        //     .create_texture_from_surface(rendered)
-        //     .unwrap();
-        // canvas
-        //     .copy(&rendered_texture, text_rect, text_rect)
-        //     .unwrap();
 
         chord_table.draw(&mut canvas, Rect::new(0, 0, 1200, 600))?;
 
