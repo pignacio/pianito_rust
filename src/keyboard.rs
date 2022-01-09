@@ -206,7 +206,7 @@ impl<'ttf> Keyboard<'ttf> {
                     State::SOUNDING => DARK_GREEN,
                 };
                 let rect = Rect::new(
-                    dest.x() + (white_width * black_position as u32 + 2 * base_width) as i32,
+                    dest.x() + (white_width * black_position as u32 + base_width) as i32,
                     dest.y(),
                     black_width,
                     black_height,

@@ -104,6 +104,7 @@ fn run() -> Result<(), String> {
     let font = Rc::new(ttf.load_font("Inconsolata.otf", 30)?);
 
     let mut canvas = window.into_canvas().build().unwrap();
+    let texture_creator = canvas.texture_creator();
     let keyboard = Keyboard::new(font.clone(), canvas.texture_creator());
     let mut frame_count = 0;
 
