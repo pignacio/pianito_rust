@@ -37,14 +37,16 @@ impl Chord {
     }
 
     pub fn get_keys(&self, base: Key) -> Vec<Key> {
-        return self.get_chord_notes()
+        return self
+            .get_chord_notes()
             .into_iter()
             .map(|note| base.transpose(note - ROOT_KEY))
             .collect();
     }
-    
+
     fn get_chord_notes(&self) -> Vec<Key> {
-        return self.get_chord_intervals()
+        return self
+            .get_chord_intervals()
             .into_iter()
             .map(|interval| ROOT_KEY + interval)
             .collect();

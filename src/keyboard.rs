@@ -166,11 +166,11 @@ impl<'ttf> Keyboard<'ttf> {
         dest: Rect,
         states: &HashMap<Key, KeyState>,
     ) {
-        let base_width = dest.width() / 24;
+        let base_width = dest.width() / 45;
         let base_height = dest.height() / 3;
-        let white_width = (3 * base_width) / 2;
+        let white_width = 3 * base_width;
         let white_height = dest.height();
-        let black_width = base_width;
+        let black_width = 2 * base_width;
         let black_height = 2 * base_height;
         // let mut pos = 0;
         for white_position in 0..15 {
@@ -206,7 +206,7 @@ impl<'ttf> Keyboard<'ttf> {
                     State::SOUNDING => DARK_GREEN,
                 };
                 let rect = Rect::new(
-                    dest.x() + (white_width * black_position as u32 + base_width) as i32,
+                    dest.x() + (white_width * black_position as u32 + 2 * base_width) as i32,
                     dest.y(),
                     black_width,
                     black_height,

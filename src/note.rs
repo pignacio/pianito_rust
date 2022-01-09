@@ -38,8 +38,8 @@ impl Note {
             Note::F => "F",
             Note::FSharp => "Gb",
             Note::G => "G",
-            Note::GSharp => "Ab", 
-        }
+            Note::GSharp => "Ab",
+        };
     }
 }
 
@@ -68,7 +68,7 @@ impl Key {
             octave: new_octave,
         }
     }
-    
+
     pub fn note(&self) -> Note {
         return self.note;
     }
@@ -78,7 +78,7 @@ impl Key {
     }
 
     pub fn text(&self) -> String {
-        return format!("{}{}", self.note.text(), self.octave)
+        return format!("{}{}", self.note.text(), self.octave);
     }
 }
 

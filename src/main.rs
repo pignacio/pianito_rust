@@ -1,8 +1,13 @@
+use chord::Chord;
+use note::NOTES;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::mixer::{Chunk, AUDIO_S16LSB, DEFAULT_CHANNELS};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
+use sdl2::render::{Canvas, RenderTarget, TextureCreator};
+use sdl2::ttf::Font;
+use sdl2::video::WindowContext;
 use sdl2::TimerSubsystem;
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -92,20 +97,18 @@ fn run() -> Result<(), String> {
     let _mixer = sdl2::mixer::init(sdl2::mixer::InitFlag::OGG)?;
     let mut pump = sdl2.event_pump()?;
     let video = sdl2.video()?;
-    let window = video.window("Testing window", 800, 600).build().unwrap();
+    let window = video.window("Testing window", 1200, 900).build().unwrap();
     let timer = sdl2.timer()?;
 
     sdl2::mixer::allocate_channels(16);
     let font = Rc::new(ttf.load_font("Inconsolata.otf", 30)?);
 
     let mut canvas = window.into_canvas().build().unwrap();
-    let texture_creator = canvas.texture_creator();
     let keyboard = Keyboard::new(font.clone(), canvas.texture_creator());
     let mut frame_count = 0;
 
     let root_key = Key::new(Note::C, 3);
     let mut current_key = root_key;
-    let mut current_chord_index = 0i32;
 
     let mut sounding_until: HashMap<Key, u32> = HashMap::new();
 
@@ -120,6 +123,8 @@ fn run() -> Result<(), String> {
 
     let mut pending_sounds: VecDeque<PendingSound> = VecDeque::with_capacity(5);
 
+    let mut chord_table = ChordTable::new(font.clone(), canvas.texture_creator());
+
     'running: loop {
         canvas.set_draw_color(Color {
             r: 0,
@@ -129,8 +134,8 @@ fn run() -> Result<(), String> {
         });
         canvas.clear();
         for event in pump.poll_iter() {
-            let current_chord = CHORDS[positive_remainder(current_chord_index, CHORDS.len())];
-            let chord_keys = current_chord.get_keys(current_key);
+            let (chord_key, chord) = chord_table.current_chord();
+            let chord_keys = chord.get_keys(chord_key);
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -142,23 +147,19 @@ fn run() -> Result<(), String> {
                 Event::KeyDown {
                     keycode: Some(Keycode::Right),
                     ..
-                } => current_key = current_key.transpose(1),
+                } => chord_table.right(),
                 Event::KeyDown {
                     keycode: Some(Keycode::Left),
                     ..
-                } => current_key = current_key.transpose(-1),
+                } => chord_table.left(),
                 Event::KeyDown {
                     keycode: Some(Keycode::Down),
                     ..
-                } => {
-                    current_chord_index -= 1;
-                }
+                } => chord_table.down(),
                 Event::KeyDown {
                     keycode: Some(Keycode::Up),
                     ..
-                } => {
-                    current_chord_index += 1;
-                }
+                } => chord_table.up(),
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
@@ -210,8 +211,8 @@ fn run() -> Result<(), String> {
         // for key in get_chord(root_c, Chord::Minor) {
         //     states.insert(key, KeyState::new(State::PRESSED, None));
         // }
-        let current_chord = CHORDS[positive_remainder(current_chord_index, CHORDS.len())];
-        for key in current_chord.get_keys(current_key) {
+        let (chord_key, chord) = chord_table.current_chord();
+        for key in chord.get_keys(chord_key) {
             states.insert(
                 key,
                 KeyState::new(
@@ -220,22 +221,24 @@ fn run() -> Result<(), String> {
                     } else {
                         State::PRESSED
                     },
-                    Some(get_interval_text(key - current_key)),
+                    Some(get_interval_text(key - chord_key)),
                 ),
             );
         }
 
-        let chord_text = format!("{}{}", current_key.note().text(), current_chord.get_text());
-        let rendered = font.render(&chord_text).blended(Color::WHITE).unwrap();
-        let text_rect = rendered.rect();
-        let rendered_texture = texture_creator
-            .create_texture_from_surface(rendered)
-            .unwrap();
-        canvas
-            .copy(&rendered_texture, text_rect, text_rect)
-            .unwrap();
+        // let chord_text = format!("{}{}", current_key.note().text(), current_chord.get_text());
+        // let rendered = font.render(&chord_text).blended(Color::WHITE).unwrap();
+        // let text_rect = rendered.rect();
+        // let rendered_texture = texture_creator
+        //     .create_texture_from_surface(rendered)
+        //     .unwrap();
+        // canvas
+        //     .copy(&rendered_texture, text_rect, text_rect)
+        //     .unwrap();
 
-        keyboard.draw_keyboard(&mut canvas, Rect::new(50, 150, 700, 300), &states);
+        chord_table.draw(&mut canvas, Rect::new(0, 0, 1200, 600))?;
+
+        keyboard.draw_keyboard(&mut canvas, Rect::new(150, 600, 900, 300), &states);
 
         canvas.present();
         frame_count += 1;
@@ -244,4 +247,89 @@ fn run() -> Result<(), String> {
 
     println!("Hello, world!");
     Ok(())
+}
+
+struct ChordTable<'ttf> {
+    font: Rc<Font<'ttf, 'static>>,
+    texture_creator: TextureCreator<WindowContext>,
+    note_index: i32,
+    chord_index: i32,
+}
+
+impl<'ttf> ChordTable<'ttf> {
+    pub fn right(&mut self) {
+        self.note_index += 1;
+    }
+
+    pub fn left(&mut self) {
+        self.note_index -= 1;
+    }
+
+    pub fn up(&mut self) {
+        self.chord_index -= 1;
+    }
+
+    pub fn down(&mut self) {
+        self.chord_index += 1;
+    }
+
+    pub fn current_chord(&self) -> (Key, Chord) {
+        let note = NOTES[positive_remainder(self.note_index, NOTES.len())];
+        (
+            Key::new(note, 3),
+            CHORDS[positive_remainder(self.chord_index, CHORDS.len())],
+        )
+    }
+
+    pub fn draw<T: RenderTarget>(&self, canvas: &mut Canvas<T>, rect: Rect) -> Result<(), String> {
+        let cell_height = rect.height() / CHORDS.len() as u32;
+        let cell_width = rect.width() / NOTES.len() as u32;
+
+        let current_x = positive_remainder(self.note_index, NOTES.len());
+        let current_y = positive_remainder(self.chord_index, CHORDS.len());
+
+        for (x, note) in NOTES.iter().enumerate() {
+            for (y, chord) in CHORDS.iter().enumerate() {
+                let chord_text = format!("{}{}", note.text(), chord.get_text());
+                let color = if x == current_x && y == current_y {
+                    Color::RED
+                } else {
+                    Color::WHITE
+                };
+                let rendered = self
+                    .font
+                    .render(&chord_text)
+                    .blended(color)
+                    .map_err(|err| err.to_string())?;
+                let text_rect = rendered.rect();
+                let rendered_texture = self
+                    .texture_creator
+                    .create_texture_from_surface(rendered)
+                    .map_err(|e| e.to_string())?;
+                canvas.copy(
+                    &rendered_texture,
+                    text_rect,
+                    Rect::new(
+                        rect.x + x as i32 * cell_width as i32,
+                        rect.y + y as i32 * cell_height as i32,
+                        text_rect.width(),
+                        text_rect.height(),
+                    ),
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn new(
+        font: Rc<Font<'ttf, 'static>>,
+        texture_creator: TextureCreator<WindowContext>,
+    ) -> ChordTable<'ttf> {
+        ChordTable {
+            font,
+            texture_creator,
+            note_index: 0,
+            chord_index: 0,
+        }
+    }
 }
